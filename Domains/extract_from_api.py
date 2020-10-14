@@ -8,7 +8,7 @@ from datetime import date, timedelta
 #enter start date & end date for date list
 def date_list_generator():
     sdate = date(2020,1,1)   
-    edate = date(2020,1,4)
+    edate = date(2020,7,31)
     delta = edate - sdate
     date_list = []
     for i in range(delta.days + 1):
@@ -98,9 +98,9 @@ def fill_up_table():
         print(f'Added {len(df_date)} rows to df_full for date:{dato}')
         ulykke_liste.append(len(df_date))
         dato_list.append(dato)
-    df_full.to_csv('MVP_ulykker.csv')
+    df_full.to_csv('.\csv\MVP_ulykker.csv')
     df_logs = pd.DataFrame({'dato':dato_list, 'antall ulykker':ulykke_liste}) 
-    df_logs.to_csv('MVP_ulykker_log.csv')
+    df_logs.to_csv('.\csv\MVP_ulykker_log.csv')
     print('I made it :D')
 
 
