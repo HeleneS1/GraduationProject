@@ -1,5 +1,5 @@
 
--- Staging area hospitals 
+-- Staging area hospitals :)
 create table if not exists public.hospital_stage 
 (hosp_id serial primary key, 
 hosp_name varchar(255),
