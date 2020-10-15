@@ -7,7 +7,7 @@ from datetime import date, timedelta
 
 #enter start date & end date for date list
 def date_list_generator():
-    sdate = date(2020,1,1)   
+    sdate = date(1977,1,1)   
     edate = date(2020,7,31)
     delta = edate - sdate
     date_list = []
@@ -93,11 +93,14 @@ def fill_up_table():
     ulykke_liste = []
     dato_list = []
     for dato in date_list:
-        df_date = fetch_from_date(dato)
-        df_full = pd.concat([df_full, df_date])
-        print(f'Added {len(df_date)} rows to df_full for date:{dato}')
-        ulykke_liste.append(len(df_date))
-        dato_list.append(dato)
+        try:
+            df_date = fetch_from_date(dato)
+            df_full = pd.concat([df_full, df_date])
+            print(f'Added {len(df_date)} rows to df_full for date:{dato}')
+            ulykke_liste.append(len(df_date))
+            dato_list.append(dato)
+        except:
+            print(f'I failed at date: {dato}')
     df_full.to_csv('.\csv\MVP_ulykker.csv')
     df_logs = pd.DataFrame({'dato':dato_list, 'antall ulykker':ulykke_liste}) 
     df_logs.to_csv('.\csv\MVP_ulykker_log.csv')
