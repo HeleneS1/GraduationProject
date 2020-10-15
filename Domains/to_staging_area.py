@@ -3,7 +3,7 @@ import psycopg2
 import pandas as pd
 from sqlalchemy import create_engine
 
-
+#Hospitals
 sykehus = pd.read_csv('Sykehus-lokasjoner.csv', 'r', delimiter=',', encoding='iso-8859-1') 
 
 hospitals = sykehus[['Id',
