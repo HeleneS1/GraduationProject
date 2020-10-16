@@ -114,7 +114,7 @@ SELECT TO_CHAR(datum,'yyyymmdd')::INT AS date_dim_id,
          WHEN EXTRACT(isodow FROM datum) IN (6,7) THEN TRUE
          ELSE FALSE
        END AS weekend_indr
-FROM (SELECT '2020-01-01'::DATE+ SEQUENCE.DAY AS datum
+FROM (SELECT '2010-01-01'::DATE+ SEQUENCE.DAY AS datum
       FROM GENERATE_SERIES (0,29219) AS SEQUENCE (DAY)
       GROUP BY SEQUENCE.DAY) DQ
 ORDER BY 1;
@@ -155,11 +155,13 @@ alter table public.fact_accident add column sv_acc_id integer;
 -- Insert into d_location;
 insert into public.d_location(loc_lat, loc_long) 
 select loc_lat, loc_long from public.accident_stage;
+--select * from d_location; 
 
 
 --Insert into d_hospital
 insert into public.d_hospital (hosp_name, hosp_city, hosp_lat, hosp_long)
 select hosp_name, hosp_city, hosp_lat, hosp_long from public.hospital_stage ;
+--select * from d_hospital; 
 
 
 --change datatype on date in accident_stage (to match d_date)
@@ -178,6 +180,4 @@ from d_location dl
 	join hospital_stage hs on 
 		hs.hosp_id = ch.hosp_id;
 
-select * from fact_accident;
-
-
+select * from fact_accident; 
