@@ -1,5 +1,5 @@
 
--- Staging area hospitals :)
+-- Create staging area hospitals
 create table if not exists public.hospital_stage 
 (hosp_id serial primary key, 
 hosp_name varchar(255),
@@ -9,28 +9,30 @@ hosp_long numeric);
 
 --drop table public.hospital_stage ;
 
---Staging accident 
-
+--Create staging accident 
 create table if not exists public.accident_stage
-(acc_id serial primary key, 
+(acc_id integer primary key, 
 url varchar(255),
-acc_lat numeric,
-acc_long numeric, 
-death_dummy integer,
+loc_lat numeric,
+loc_long numeric, 
+death integer,
 date varchar(255)); 
+ALTER TABLE public.accident_stage
+ALTER COLUMN date TYPE integer;
+
 
 --drop table public.accident_stage;
 
--- Staging: Closest hospital for each accident
+-- Create staging: Closest hospital for each accident
 create table if not exists public.closest_hosp
 (id serial primary key,
 acc_id integer,
-hospital varchar(255),
+hosp_id integer,
 distance integer); 
 
 -- drop table public.closest_hosp;
 
---Starschema: dimension date
+--Create starschema: dimension date
 
 CREATE TABLE d_date
 (
@@ -72,6 +74,8 @@ CREATE INDEX d_date_date_actual_idx
 
 COMMIT;
 
+-- Insert into d_date dimension
+
 INSERT INTO d_date
 SELECT TO_CHAR(datum,'yyyymmdd')::INT AS date_dim_id,
        datum AS date_actual,
@@ -110,24 +114,24 @@ SELECT TO_CHAR(datum,'yyyymmdd')::INT AS date_dim_id,
          WHEN EXTRACT(isodow FROM datum) IN (6,7) THEN TRUE
          ELSE FALSE
        END AS weekend_indr
-FROM (SELECT '2020-01-01'::DATE+ SEQUENCE.DAY AS datum
+FROM (SELECT '2010-01-01'::DATE+ SEQUENCE.DAY AS datum
       FROM GENERATE_SERIES (0,29219) AS SEQUENCE (DAY)
       GROUP BY SEQUENCE.DAY) DQ
 ORDER BY 1;
 
 --drop table d_date; 
 
---Dimension: hospital
+--Create dimension: hospital
 create table if not exists public.d_hospital
 (hosp_id serial primary key, 
 hosp_name varchar(255),
 hosp_city varchar(255), 
-hosp_long numeric, 
-hosp_lat numeric) ;
+hosp_lat numeric,
+hosp_long numeric) ;
 
 --drop table public.d_hospital; 
 
---Dimension accident
+--Create dimension location
 create table if not exists public.d_location
 (loc_id serial primary key, 
 loc_lat numeric,
@@ -135,7 +139,7 @@ loc_long numeric)
 ; 
 --drop table public.d_location; 
 
--- Facts 
+-- Create fact-table
 create table if not exists public.fact_accident(
 acc_sid serial primary key,
 date_sid integer references public.d_date(date_dim_id),
@@ -143,15 +147,37 @@ loc_sid integer references public.d_location(loc_id),
 hosp_sid integer references public.d_hospital(hosp_id),
 death integer,
 distance numeric) ; 
+alter table public.fact_accident add column sv_acc_id integer;
 
 --drop table public.fact_accident;
 
+-------------------------------------------------------------------------------------
+-- Insert into d_location;
+insert into public.d_location(loc_lat, loc_long) 
+select loc_lat, loc_long from public.accident_stage;
+--select * from d_location; 
 
 
+--Insert into d_hospital
+insert into public.d_hospital (hosp_name, hosp_city, hosp_lat, hosp_long)
+select hosp_name, hosp_city, hosp_lat, hosp_long from public.hospital_stage ;
+--select * from d_hospital; 
 
 
+--change datatype on date in accident_stage (to match d_date)
+update public.accident_stage set date = replace(date, '-', '');
+alter table public.accident_stage alter column date type int using(date::int);
 
 
+--Insert into fact
+insert into public.fact_accident (date_sid, loc_sid, hosp_sid, death, distance, sv_acc_id)
+select as2.date, dl.loc_id,  hs.hosp_id, as2.death, ch.distance, as2.acc_id  
+from d_location dl
+	join accident_stage as2 on 
+		dl.loc_lat = as2.loc_lat and dl.loc_long = as2.loc_long
+	join closest_hosp ch on 
+		ch.acc_id = as2.acc_id
+	join hospital_stage hs on 
+		hs.hosp_id = ch.hosp_id;
 
-
-
+select * from fact_accident; 
