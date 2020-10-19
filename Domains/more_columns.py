@@ -5,8 +5,8 @@ from datetime import date, timedelta
 #%%
 #enter start date & end date for date list
 def date_list_generator():
-    sdate = date(2020,1,1)   
-    edate = date(2020,1,4)
+    sdate = date(2010,1,1)   
+    edate = date(2020,7,31)
     delta = edate - sdate
     date_list = []
     for i in range(delta.days + 1):
@@ -231,7 +231,10 @@ def get_all_dates():
             dato_list.append(dato)
         except:
             print(f'I failed at date: {dato}')
-    df_all_dates.to_csv('.\csv\ulykker.csv')
+    df_all_dates.to_csv('ulykker.csv')
     df_logs = pd.DataFrame({'dato':dato_list, 'antall ulykker':ulykke_liste}) 
-    df_logs.to_csv('.\csv\ulykker_log.csv')
+    df_logs.to_csv('ulykker_log.csv')
     print('I made it :D')
+
+if __name__=='__main__':
+    get_all_dates()
