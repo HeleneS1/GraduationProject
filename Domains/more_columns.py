@@ -231,9 +231,9 @@ def get_all_dates():
             dato_list.append(dato)
         except:
             print(f'I failed at date: {dato}')
-    df_all_dates.to_csv('ulykker.csv')
+    df_all_dates.to_csv('ulykker.csv', encoding='iso-8859-1')
     df_logs = pd.DataFrame({'dato':dato_list, 'antall ulykker':ulykke_liste}) 
-    df_logs.to_csv('ulykker_log.csv')
+    df_logs.to_csv('ulykker_log.csv', encoding='iso-8859-1')
     print('I made it :D')
 
 if __name__=='__main__':

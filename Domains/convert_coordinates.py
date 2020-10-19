@@ -6,7 +6,7 @@ def convert_coordinates():
     import pandas as pd
     import utm
 
-    df = pd.read_csv('ulykker.csv')
+    df = pd.read_csv('ulykker.csv', 'r', delimiter=',', encoding='iso-8859-1')
     latlon_list = []
 
     for i in range(len(df)):
@@ -24,7 +24,7 @@ def convert_coordinates():
     df['Longitude'] = longitude
     del df['Northing']
 
-    df.to_csv('ulykker_latlon.csv')
+    df.to_csv('ulykker_latlon.csv', encoding='iso-8859-1')
     print('I made it :) ')
 
 if __name__=='__main__':
