@@ -11,10 +11,11 @@ hosp_long numeric);
 
 --Create staging accident NEARLY DONE
 create table if not exists database2.accident_stage
-(acc_id integer primary key, 
+(num_acc_id serial primary key,
+acc_id integer, 
 url varchar(255),
 weekday varchar(255),
-date varchar(255),
+date varchar,
 time varchar(255), 
 police_district varchar(255),
 accident_category varchar(255),
@@ -36,9 +37,11 @@ temperature integer,
 loc_lat numeric,
 loc_long numeric ); 
 
+--drop table database2.accident_stage ;
+select * from database2.accident_stage ;
+
 --change datatype on date in accident_stage (to match d_date)
-update database2.accident_stage set date = replace(date, '-', '');
-alter table database2.accident_stage alter column date type int using(date::int);
+
 
 drop table database2.accident_stage;
 
@@ -143,64 +146,61 @@ select * from d_date;
 
 --Create timedimesion  DONE
 
-CREATE table database2.time (
-    id int4 NOT NULL,
-    time time,
-    hour int2,
-    military_hour int2,
-    minute int4,
-    second int4,
-    minute_of_day int4,
-    second_of_day int4,
-    quarter_hour varchar,
-    am_pm varchar,
-    day_night varchar,
-    day_night_abbrev varchar,
-    time_period varchar,
-    time_period_abbrev varchar
+CREATE TABLE database2.d_time
+(
+time_key integer NOT NULL,
+time_value character(5) NOT NULL,
+hours_24 character(2) NOT NULL,
+hours_12 character(2) NOT NULL,
+hour_minutes character (2)  NOT NULL,
+day_minutes integer NOT NULL,
+day_time_name character varying (20) NOT NULL,
+day_night character varying (20) NOT NULL,
+CONSTRAINT time_dim_pk PRIMARY KEY (time_key)
 )
-WITH (OIDS=FALSE);
+WITH (
+OIDS=FALSE
+);
 
---Populate time DONE
+COMMENT ON TABLE database2.d_time IS 'Time Dimension';
+COMMENT ON COLUMN database2.d_time.time_key IS 'Time Dimension PK';
 
-INSERT INTO database2.time
-SELECT
-  to_char(datum, 'HH24MISS')::integer AS id,
-  datum::time AS time,
-  to_char(datum, 'HH12')::integer AS hour,
-  to_char(datum, 'HH24')::integer AS military_hour,
-  extract(minute FROM datum)::integer AS minute,
-  extract(second FROM datum) AS second,
-  to_char(datum, 'SSSS')::integer / 60 AS minute_of_day,
-  to_char(datum, 'SSSS')::integer AS second_of_day,
-  to_char(datum - (extract(minute FROM datum)::integer % 15 || 'minutes')::interval, 'hh24:mi') ||
-  ' ï¿½ ' ||
-  to_char(datum - (extract(minute FROM datum)::integer % 15 || 'minutes')::interval + '14 minutes'::interval, 'hh24:mi')
-    AS quarter_hour,
-  to_char(datum, 'AM') AS am_pm,
-  CASE WHEN to_char(datum, 'hh24:mi') BETWEEN '08:00' AND '19:59' THEN 'Day (8AM-8PM)' ELSE 'Night (8PM-8AM)' END
-  AS day_night,
-  CASE WHEN to_char(datum, 'hh24:mi') BETWEEN '08:00' AND '19:59' THEN 'Day' ELSE 'Night' END
-  AS day_night_abbrev,
-  CASE
-  WHEN to_char(datum, 'hh24:mi') BETWEEN '00:00' AND '03:59' THEN 'Late Night (Midnight-4AM)'
-  WHEN to_char(datum, 'hh24:mi') BETWEEN '04:00' AND '07:59' THEN 'Early Morning (4AM-8AM)'
-  WHEN to_char(datum, 'hh24:mi') BETWEEN '08:00' AND '11:59' THEN 'Morning (8AM-Noon)'
-  WHEN to_char(datum, 'hh24:mi') BETWEEN '12:00' AND '15:59' THEN 'Afternoon (Noon-4PM)'
-  WHEN to_char(datum, 'hh24:mi') BETWEEN '16:00' AND '19:59' THEN 'Evening (4PM-8PM)'
-  WHEN to_char(datum, 'hh24:mi') BETWEEN '20:00' AND '23:59' THEN 'Night (8PM-Midnight)'
-  END AS time_period,
-  CASE
-  WHEN to_char(datum, 'hh24:mi') BETWEEN '00:00' AND '03:59' THEN 'Late Night'
-  WHEN to_char(datum, 'hh24:mi') BETWEEN '04:00' AND '07:59' THEN 'Early Morning'
-  WHEN to_char(datum, 'hh24:mi') BETWEEN '08:00' AND '11:59' THEN 'Morning'
-  WHEN to_char(datum, 'hh24:mi') BETWEEN '12:00' AND '15:59' THEN 'Afternoon'
-  WHEN to_char(datum, 'hh24:mi') BETWEEN '16:00' AND '19:59' THEN 'Evening'
-  WHEN to_char(datum, 'hh24:mi') BETWEEN '20:00' AND '23:59' THEN 'Night'
-  END AS time_period_abbrev
-FROM generate_series('2000-01-01 00:00:00'::timestamp, '2000-01-01 23:59:59'::timestamp, '1 hour') datum;
+insert into  database2.d_time
 
-select * from database2.time; 
+SELECT  cast(to_char(minute, 'hh24mi') as numeric) time_key,
+to_char(minute, 'hh24:mi') AS tume_value,
+-- Hour of the day (0 - 23)
+to_char(minute, 'hh24') AS hour_24,
+-- Hour of the day (0 - 11)
+to_char(minute, 'hh12') hour_12,
+-- Hour minute (0 - 59)
+to_char(minute, 'mi') hour_minutes,
+-- Minute of the day (0 - 1439)
+extract(hour FROM minute)*60 + extract(minute FROM minute) day_minutes,
+-- Names of day periods
+case when to_char(minute, 'hh24:mi') BETWEEN '06:00' AND '08:29'
+then 'Morning'
+when to_char(minute, 'hh24:mi') BETWEEN '08:30' AND '11:59'
+then 'AM'
+when to_char(minute, 'hh24:mi') BETWEEN '12:00' AND '17:59'
+then 'PM'
+when to_char(minute, 'hh24:mi') BETWEEN '18:00' AND '22:29'
+then 'Evening'
+else 'Night'
+end AS day_time_name,
+-- Indicator of day or night
+case when to_char(minute, 'hh24:mi') BETWEEN '07:00' AND '19:59' then 'Day'
+else 'Night'
+end AS day_night
+FROM (SELECT '0:00'::time + (sequence.minute || ' minutes')::interval AS minute
+FROM generate_series(0,1439) AS sequence(minute)
+GROUP BY sequence.minute
+) DQ
+ORDER BY 1 ;
+
+--update database2.d_time set date = replace(date, '-', '');
+--alter table database2.accident_stage alter column date type int using(date::int);
+
 
 --Create dimension: hospital
 create table if not exists database2.d_hospital
@@ -222,23 +222,36 @@ loc_long numeric)
 --drop table database2.d_location; 
 
 --Create conditions_d 
-create table if not exists database2.d_conditions
-(con_id serial primary key,
+create table if not exists database2.d_changing_conditions
+(change_id serial primary key,
 driving_condition varchar,
 weather_conditions varchar, 
 lighting_condition varchar,
-speed_limit integer,
 temperature integer);
 
-drop table database2.conditions ;
+--drop table database2.d_changing_conditions ;
+
+create table if not exists database2.d_permanent_conditions
+(permanent_id serial primary key, 
+road_type varchar(255),
+area_type varchar(255),
+road_surface varchar(255),
+lane_type varchar(255),
+lane_numbers integer, 
+speed_limit integer);
+
+--drop table database2.d_permanent_conditions;
+
 
 --Create fact-table 
 create table if not exists database2.fact_accident(
 acc_sid serial primary key,
 date_sid integer references database2.d_date(date_dim_id),
+time_sid integer references database2.d_time(time_key),
 loc_sid integer references database2.d_location(loc_id),
 hosp_sid integer references database2.d_hospital(hosp_id),
-con_sid integer references database2.conditions(con_id),
+change_sid integer references database2.d_changing_conditions(change_id),
+permanent_id integer references database2.d_permanent_conditions(permanent_id),
 killed_ct integer,
 very_seriously_injured_ct integer, 
 serious_injured_ct integer, 
@@ -256,38 +269,83 @@ select * from database2."time" t;
 insert into database2.d_location(loc_lat, loc_long) 
 select loc_lat, loc_long from database2.accident_stage;
 
+select * from database2.d_date dd ;
+
+--change datatype on date
+update database2.accident_stage set date = replace(date, '-', '');
+alter table database2.accident_stage alter column date type int using(date::int);
+select * from database2.accident_stage; 
+
 
 --Insert into d_hospital
-insert into database2.d_hospital (hosp_name, hosp_city, hosp_lat, hosp_long)
-select hosp_name, hosp_city, hosp_lat, hosp_long from database2.hospital_stage ;
+insert into database2.d_hospital (hosp_name, hosp_city, hosp_name_city, hosp_lat, hosp_long)
+select hosp_name, hosp_city, hosp_name_city, hosp_lat, hosp_long from database2.hospital_stage ;
+select * from database2.d_hospital;
 
---insert into conditions
-insert into database2.d_conditions (driving_condition, weather_conditions,
-lighting_condition, speed_limit, temperature)
-select driving_condition, weather_conditions,
-lighting_condition, speed_limit, temperature from database2.accident_stage; 
+--insert into changing conditions
+insert into database2.d_changing_conditions (driving_condition, weather_conditions,
+lighting_condition, temperature)
+select driving_condition, weather_condition,
+lighting_condition, speed_limit from database2.accident_stage; 
+
+-- insert into permanent conditions
+insert into database2.d_permanent_conditions (road_type, area_type, road_surface, lane_type,
+lane_numbers, speed_limit)
+select road_type, area_type, road_surface, lane_type, lane_numbers, speed_limit
+from database2.accident_stage ;
+
+select * from database2.accident_stage as2  ;
+
+--change datatype on time
+update database2.accident_stage set time = replace(time, ':', '');
+alter table database2.accident_stage alter column time type int using(time::int);
 
 --Insert into fact 
-insert into database2.fact_accident (date_sid, loc_sid, hosp_sid, con_sid, 
+insert into database2.fact_accident (date_sid, time_sid, loc_sid, hosp_sid, change_sid,
+permanent_id,
 killed_ct, very_seriously_injured_ct, serious_injured_ct, injured_ct, distance, sv_acc_id)
-select as2.date, dl.loc_id,  hs.hosp_id, c.con_id, as2.killed_ct, as2.very_seriously_injured_ct,
+select as2.date, t.time_key, dl.loc_id,  hs.hosp_id, cc.change_id, pc.permanent_id, 
+as2.killed_ct, as2.very_seriously_injured_ct,
 as2.serious_injured_ct, as2.injured_ct, ch.distance, as2.acc_id  
 from database2.d_location dl
 	join database2.accident_stage as2 on 
-		dl.loc_lat = as2.loc_lat and dl.loc_long = as2.loc_long
+		dl.loc_id = as2.num_acc_id
 	join database2.closest_hosp ch on 
 		ch.acc_id = as2.acc_id
 	join database2.hospital_stage hs on 
 		hs.hosp_id = ch.hosp_id
-	join database2.d_conditions c on 
-	as2.driving_condition = c.driving_condition and 
-	as2.weather_condition = c.weather_conditions  and 
-	as2.speed_limit = c.speed_limit and 
-	as2.lighting_condition = c.lighting_condition and
-	as2.temperature = c.temperature
+	join database2.d_time t on
+		t.time_key = as2.time 
+	join database2.d_changing_conditions cc on 
+		as2.num_acc_id = cc.change_id
+	join database2.d_permanent_conditions pc on
+		as2.num_acc_id = pc.permanent_id
 	;
 
-select * from database2.fact_accident; 
+
+--Prøver på nytt
+insert into database2.fact_accident (date_sid, time_sid, loc_sid, hosp_sid,
+killed_ct, very_seriously_injured_ct, serious_injured_ct, injured_ct, distance, sv_acc_id
+)
+select a2.date, a2.time, dl.loc_id, hs.hosp_id,
+killed_ct, very_seriously_injured_ct, serious_injured_ct, injured_ct, distance, a2.acc_id 
+from database2.accident_stage a2
+join database2.d_location dl on 
+dl.loc_id = a2.num_acc_id
+join database2.closest_hosp ch on 
+		ch.acc_id = a2.acc_id
+join database2.hospital_stage hs on 
+		hs.hosp_id = ch.hosp_id
+ ;
+
+
+truncate database2.fact_accident ;
+
+select count(*) from database2.d_changing_conditions dcc ; 
+select * from database2.d_location as2 
+
+select * from database2. as2; 
+
 
 
 
