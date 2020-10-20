@@ -1,9 +1,16 @@
-
 import psycopg2
 import pandas as pd
 from sqlalchemy import create_engine
 
-to_acc = pd.read_csv('Sykehus-lokasjoner.csv', 'r', delimiter=',', encoding='iso-8859-1')
+to_acc = pd.read_csv('komplett2010.csv', 'r', delimiter=',', encoding='iso-8859-1')
+to_acc = to_acc[['Ulykkes id', 'URL',
+       'Ukedag', 'Ulykkesdato', 'Ulykkesklokkeslett',
+       'Behandlende politidistrikt', 'Uhell kategori',
+       'Antall drepte i ulykken', 'Antall meget alvorlig skadet',
+       'Antall alvorlig skadet', 'Antall lettere skadet', 'Alvorlighetsgrad',
+       'Vegtype', 'Stedsforhold', 'Dekketype', 'Føreforhold', 'Værforhold',
+       'Lysforhold', 'Kjørefelttype', 'Antall kjørefelt', 'Fartsgrense',
+       'Temperatur', 'latitude', 'longitude', 's_id', 'distance']]
 
 to_acc.rename(columns={'Ulykkes id':'acc_id', 
                        'URL':'url', 
@@ -26,9 +33,9 @@ to_acc.rename(columns={'Ulykkes id':'acc_id',
                        'Kjørefelttype':'lane_type', 
                        'Antall kjørefelt':'lane_numbers', 
                        'Fartsgrense':'speed_limit',
-                       '': 'temperature',
-                       '': 'loc_lat',
-                       '':'loc_long'}, inplace=True)
+                       'Temperatur': 'temperature',
+                       'latitude': 'loc_lat',
+                       'longitude':'loc_long'}, inplace=True)
 
 def populate(username, password_name, df, tablename):
     hostname = "ds-etl-academy.cgbivchwjzle.eu-west-1.rds.amazonaws.com"
