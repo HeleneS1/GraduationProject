@@ -3,16 +3,17 @@ import pandas as pd
 import json
 from datetime import date, timedelta
 #%%
-#enter start date & end date for date list
+#enter start date & end date for date list  '2010,1,1' '2020,7,31'
 def date_list_generator():
     sdate = date(2010,1,1)   
-    edate = date(2020,7,31)
+    edate = date(2020,1,31)
     delta = edate - sdate
     date_list = []
     for i in range(delta.days + 1):
         day = sdate + timedelta(days=i)
         date_list.append((str(day)))
     return date_list
+
 
 #%%
 def create_url(date):

@@ -6,7 +6,7 @@ from tqdm import tqdm_gui
 
     
 def get_google_dist_matrix(origin, destination):
-    API_KEY = 'AIzaSyDWSe3IXVf3HWOoaOfjmTOI54gj0_HpkCc'
+    API_KEY = 'insert'
     units = 'metric'
 
     URL_root = f"https://maps.googleapis.com/maps/api/distancematrix/json?units={units}&origins={origin}&destinations={destination}&key={API_KEY}"
@@ -67,7 +67,7 @@ def add_google_matrix():
         id_list.append(acc_id)
         print(f'Added info for ulykke {acc_id}')
     google_distance = pd.DataFrame({'sv_acc_id':id_list, 'road_km':distance_km_list, 'time_min':time_min_list})
-    google_distance.to_csv('google_distance_matrix_test.csv')
+    google_distance.to_csv('google_distance_matrix.csv')
     print('I made the file, now let me rest -.- ')
     
 add_google_matrix()
