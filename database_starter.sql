@@ -1,6 +1,4 @@
--- STAGING AREA-- 
--- Create--
-
+-- CREATE STAGING AREA-- 
 create table if not exists hospital_stage 
 (hosp_id serial primary key, 
 hosp_name varchar(255),
@@ -8,6 +6,12 @@ hosp_city varchar(255),
 hosp_name_city varchar (255), 
 hosp_lat numeric,
 hosp_long numeric);
+
+create table if not exists google_stage
+(google_id serial primary key, 
+sv_acc_id integer,
+road_km numeric, 
+time_min numeric);
 
 create table if not exists accident_stage
 (acc_id serial primary key,
@@ -47,7 +51,7 @@ update accident_stage set time = replace(time, ':', '');
 alter table accident_stage alter column time type int using(time::int);
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- BUILD DIMENTIONS--
--- Create & populate date dimention --
+-- CREATE AND POPULATE DATE DIMENTION --
 
 CREATE TABLE d_date
 (
@@ -131,8 +135,7 @@ FROM (SELECT '2010-01-01'::DATE+ SEQUENCE.DAY AS datum
 ORDER BY 1;
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
---Create & populate time dimention
-
+--CREATE & POPULATE TIME DIMENTION 
 CREATE TABLE d_time
 (
 time_key integer NOT NULL,
@@ -204,29 +207,6 @@ driving_condition varchar,
 weather_condition varchar, 
 lighting_condition varchar);
 
-
-WITH thistable AS (
-    SELECT 
-        driving_condition, 
-        weather_condition, 
-        lighting_condition, 
-        ROW_NUMBER() OVER (
-            PARTITION BY 
-                driving_condition, 
-        		weather_condition, 
-        		lighting_condition
-            ORDER BY 
-                driving_condition, 
-        		weather_condition, 
-        		lighting_condition
-        ) row_num
-     FROM 
-        accident_stage)
-insert into d_weather_conditions (driving_condition, weather_condition,
-lighting_condition)
-select driving_condition, weather_condition, 
-lighting_condition from thistable where row_num = 1; 
-
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- Create and populate road condition dimention 
 create table if not exists d_road_conditions
@@ -237,35 +217,10 @@ road_surface varchar(255),
 lane_type varchar(255),
 lane_numbers integer);
 
-WITH thistable2 as (
-    SELECT 
-        road_type, 
-        area_type, 
-        road_surface,
-        lane_type, 
-        lane_numbers,
-        ROW_NUMBER() OVER (
-            PARTITION BY 
-                road_type, 
-		        area_type, 
-		        road_surface,
-		        lane_type, 
-		        lane_numbers
-            ORDER BY 
-                road_type, 
-		        area_type, 
-		        road_surface,
-		        lane_type, 
-		        lane_numbers
-        ) row_num
-     FROM 
-        accident_stage) 
-insert into d_road_conditions ( road_type,area_type, road_surface, lane_type, lane_numbers)         
-select  road_type, area_type,  road_surface,lane_type,lane_numbers
-from thistable2 where row_num = 1; 
+
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
--- BUILD AND POPULATE FACT TABLE 
+-- CREATE FACT TABLE 
 
 create table if not exists fact_accident(
 acc_sid serial primary key,
@@ -283,20 +238,9 @@ sv_acc_id integer,
 temperature integer, 
 loc_lat numeric, 
 loc_long numeric, 
-speed_limit integer); 
+speed_limit integer, 
+road_km numeric, 
+time_min numeric); 
 
-	with fact as (select *
-		from accident_stage acs
-			join hospital_stage hs using (hosp_id) 
-			left join d_weather_conditions dcc using (driving_condition, weather_condition, lighting_condition) 
-			left join d_road_conditions dpc using (road_type, area_type, road_surface, lane_type, lane_numbers)
-		)
-insert into fact_accident(date_sid, time_sid, hosp_sid, weather_sid, road_sid, killed_ct, 
-			very_seriously_injured_ct , serious_injured_ct , injured_ct ,
-			distance_to_hospital , sv_acc_id, temperature , loc_lat , loc_long, speed_limit) 
-	select date, time, hosp_id, weather_id, road_id, killed_ct, very_seriously_injured_ct , 
-		serious_injured_ct , injured_ct, distance_to_hospital , sv_acc_id, temperature , 
-		loc_lat , loc_long, speed_limit
-	from fact;
 
 

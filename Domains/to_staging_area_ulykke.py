@@ -44,7 +44,7 @@ def populate(username, password_name, df, tablename):
     dbname = "gp_lama"
     constring = f"postgresql+psycopg2://{user}:{password}@{hostname}/{dbname}"
     engine = create_engine(constring, echo=False)  
-    df.to_sql(tablename, engine, index=False, schema='database2', if_exists='append', method='multi', chunksize=1000)
+    df.to_sql(tablename, engine, index=False, schema='LamaV2', if_exists='append', method='multi', chunksize=1000)
 
 
 populate('student_lene', 'osama', to_acc, 'accident_stage')
