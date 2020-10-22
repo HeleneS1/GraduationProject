@@ -1,26 +1,31 @@
 """ This file contains a convertor that takes in a csv file with UTM coordinates 
 and converts them to lat/lon coordinates. Returns a CSV file with the distance """ 
 
-import pandas as pd
-import utm
 
-df = pd.read_csv('MVP_ulykker_2010.csv')
-latlon_list = []
+def convert_coordinates():
+    import pandas as pd
+    import utm
 
-for i in range(len(df)):
-    ost = df['ost_coord'][i]  
-    nord = df['nord_coord'][i]
-    latlon = utm.to_latlon(ost, nord, 33, 'U', strict=False)
-    latlon_list.append(latlon)
+    df = pd.read_csv('ulykker.csv', 'r', delimiter=',', encoding='iso-8859-1')
+    latlon_list = []
+
+    for i in range(len(df)):
+        ost = df['Easting'][i]  
+        nord = df['Northing'][i]
+        latlon = utm.to_latlon(ost, nord, 33, 'U', strict=False)
+        latlon_list.append(latlon)
 
 
-wee = list(zip(*latlon_list))
-(latitude, longitude) = wee
+    wee = list(zip(*latlon_list))
+    (latitude, longitude) = wee
 
-df['latitude'] = latitude
-del df['ost_coord']
-df['longitude'] = longitude
-del df['nord_coord']
+    df['Latitude'] = latitude
+    del df['Easting']
+    df['Longitude'] = longitude
+    del df['Northing']
 
-df[['id','url','antall drepte','latitude','longitude','dato']].to_csv('MVP_ulykker_2010_latlon.csv')
+    df.to_csv('ulykker_latlon.csv', encoding='iso-8859-1')
+    print('I made it :) ')
 
+if __name__=='__main__':
+    convert_coordinates()

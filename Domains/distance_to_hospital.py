@@ -12,6 +12,9 @@ trafikkulykke = pd.read_csv('MVP_ulykker_2010_latlon.csv', 'r', delimiter=',', e
 
 sykehus.rename(columns = {'id':'s_id'}, inplace = True)
 
+## OBS! Husk å fjerne nullverdier fra dataframen where lat/long = [Null]
+
+
 #find closest hospital id and add to df
 def nearest(row, df):
     dist_squared = (row.latitude - df.latitude) ** 2 + (row.longitude - df.longitude) ** 2
