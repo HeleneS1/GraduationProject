@@ -12,8 +12,8 @@ trafikkulykke = pd.read_csv('MVP_ulykker_2010_latlon.csv', 'r', delimiter=',', e
 
 sykehus.rename(columns = {'id':'s_id'}, inplace = True)
 
-## OBS! Husk å fjerne nullverdier fra dataframen where lat/long = [Null]
-
+#fjern null-verdier
+trafikkulykke = trafikkulykke.loc[trafikkulykke['latitude'].notna(),:] 
 
 #find closest hospital id and add to df
 def nearest(row, df):
@@ -60,5 +60,5 @@ trafikkulykker_merge['distance'] = [dist(trafikkulykker_merge.latitude[i],trafik
 trafikkulykker_merge['distance'] = trafikkulykker_merge['distance'].round(decimals=3)
 
 #save to csv
-trafikkulykker_merge.to_csv('trafikkulykker_komplett2010.csv')
+trafikkulykker_merge.to_csv('komplett2010.csv')
 

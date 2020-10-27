@@ -67,7 +67,7 @@ from sklearn import metrics
 # define dataset
 X_train, y_train = make_classification(n_samples=1000, n_features=8, n_informative=4, n_redundant=3, random_state=1)
 # define the model
-model = RandomForestClassifier(max_depth=4, n_estimators=100)
+model = RandomForestClassifier(max_depth=5.2, n_estimators=150)
 # fit the model
 model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
